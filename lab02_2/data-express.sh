@@ -6,8 +6,8 @@ info() {
 }
 
 # Ustalamy wersję Node.js
-NODE_VERSION="12"
-CONTAINER_NAME="node12_server"
+NODE_VERSION="14"
+CONTAINER_NAME="node14_express_server"
 PORT=8080
 
 info "KONFIGURACJA" "Używam Node.js w wersji $NODE_VERSION"
@@ -22,25 +22,44 @@ echo "Utworzono kontener o ID: $CONTAINER_ID"
 info "STRUKTURA" "Tworzenie katalogu /app w kontenerze"
 docker exec $CONTAINER_ID mkdir -p /app
 
-# Tworzymy plik aplikacji lokalnie
+# Tworzymy pliki aplikacji lokalnie
 mkdir -p node_app
+cat <<EOF > node_app/package.json
+{
+  "name": "express-app",
+  "version": "1.0.0",
+  "main": "server.js",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
+EOF
+
 cat <<EOF > node_app/server.js
-const http = require('http');
-const server = http.createServer((req, res) => {
-    res.writeHead(200, {'Content-Type': 'text/plain'});
-    res.end('Hello World\n');
+const express = require('express');
+const app = express();
+const port = ${PORT};
+
+app.get('/', (req, res) => {
+  res.json({ datetime: new Date().toISOString() });
 });
-server.listen(${PORT}, () => {
-    console.log(`Server running at http://localhost:${PORT}/`);
+
+app.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}/`);
 });
 EOF
 
 # Kopiujemy pliki aplikacji do kontenera
 info "KOPIOWANIE" "Kopiowanie plików aplikacji do kontenera za pomocą docker cp"
+docker cp node_app/package.json $CONTAINER_ID:/app/
 docker cp node_app/server.js $CONTAINER_ID:/app/
 
+# Instalujemy zależności wewnątrz kontenera
+info "ZALEŻNOŚCI" "Instalacja zależności Node.js wewnątrz kontenera"
+docker exec -w /app $CONTAINER_ID npm install
+
 # Uruchamiamy aplikację
-info "URUCHOMIENIE" "Uruchamianie aplikacji Node.js w kontenerze"
+info "URUCHOMIENIE" "Uruchamianie aplikacji Express.js w kontenerze"
 docker exec -w /app $CONTAINER_ID node server.js &
 
 # Oczekiwanie na uruchomienie serwera
@@ -56,12 +75,11 @@ else
     exit 1
 fi
 
-expected_output="Hello World"
 actual_output=$(curl -s http://localhost:${PORT})
-if [ "$actual_output" == "$expected_output" ]; then
-    echo "Test passed: Server returned expected output"
+if [[ "$actual_output" == *"datetime"* ]]; then
+    echo "Test passed: Server returned expected JSON response"
 else
-    echo "Test failed: Expected '$expected_output' but got '$actual_output'"
+    echo "Test failed: Expected JSON response with datetime but got '$actual_output'"
     exit 1
 fi
 
@@ -72,7 +90,5 @@ info "SPRZĄTANIE" "Aby zatrzymać i usunąć kontener, wykonaj:"
 echo "docker stop $CONTAINER_ID"
 echo "docker rm $CONTAINER_ID"
 
-
-
-# chmod +x hello-world.sh
-# ./hello-world.sh 
+# chmod +x data-express.sh
+# ./data-express.sh 
