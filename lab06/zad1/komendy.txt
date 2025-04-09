@@ -1,0 +1,7 @@
+docker network create --driver bridge --subnet 192.168.1.0/24 --gateway 192.168.1.1 my_bridge
+docker run -it --name my_container --network my_bridge --ip 192.168.1.100 alpine sh
+
+notatki:
+docker run -d --name my_container --network my_bridge alpine
+docker run -d --name my_container -p 8080:80 --network my_bridge alpine
+docker run -dit --name my_container --network my_bridge --ip 192.168.1.100 alpine

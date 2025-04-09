@@ -1,0 +1,54 @@
+version: '3.9'
+
+networks:
+  frontend_network:
+  backend_network:
+    internal: true  # ogranicza dostęp z zewnątrz
+
+services:
+  database:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: mydb
+    networks:
+      - backend_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: my-backend-image
+    build:
+      context: ./backend
+    depends_on:
+      database:
+        condition: service_healthy
+    networks:
+      - frontend_network
+      - backend_network
+    environment:
+      DB_HOST: database
+      DB_USER: user
+      DB_PASSWORD: password
+      DB_NAME: mydb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    image: my-frontend-image
+    build:
+      context: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - frontend_network
+    ports:
+      - "8080:80"

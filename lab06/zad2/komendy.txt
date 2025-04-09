@@ -1,0 +1,8 @@
+docker network create my_network
+
+docker run -d --name db --network my_network -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=testdb -e MYSQL_USER=testuser -e MYSQL_PASSWORD=testpass mysql:8
+
+Z katalogu głównego projektu:
+docker-compose up --build
+
+wejdź na http://localhost:8080

@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8
+    container_name: db
+    networks:
+      - my_network
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: testdb
+      MYSQL_USER: testuser
+      MYSQL_PASSWORD: testpass
+    ports:
+      - "3306:3306"
+
+  web:
+    build: ./web
+    container_name: web
+    networks:
+      - my_network
+    ports:
+      - "8080:3000"
+    depends_on:
+      - db
+
+networks:
+  my_network:
+    external: true
