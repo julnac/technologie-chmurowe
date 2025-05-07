@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: nginx-custom
+  template:
+    metadata:
+      labels:
+        app: nginx-custom
+    spec:
+      containers:
+      - name: nginx
+        image: julpoz/moj-nginx:v1
+        ports:
+        - containerPort: 80
