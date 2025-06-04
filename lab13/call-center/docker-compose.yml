@@ -1,0 +1,47 @@
+version: '3.9'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"  # GUI
+
+  producer:
+    build: ./producer
+    ports:
+      - "8000:8000"
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+    depends_on:
+      - rabbitmq
+
+  consumer_mortgage:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ./consumer_mortgage:/app
+      - ./shared/requirements.txt:/app/requirements.txt
+    command: sh -c "pip install -r requirements.txt && python consumer.py"
+    depends_on:
+      - rabbitmq
+
+  consumer_cash:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ./consumer_cash:/app
+      - ./shared/requirements.txt:/app/requirements.txt
+    command: sh -c "pip install -r requirements.txt && python consumer.py"
+    depends_on:
+      - rabbitmq
+
+  consumer_business:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ./consumer_business:/app
+      - ./shared/requirements.txt:/app/requirements.txt
+    command: sh -c "pip install -r requirements.txt && python consumer.py"
+    depends_on:
+      - rabbitmq
